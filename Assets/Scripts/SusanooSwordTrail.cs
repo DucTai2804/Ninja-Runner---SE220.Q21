@@ -11,8 +11,8 @@ public class SusanooSwordTrail : MonoBehaviour
     private Vector3 hiltLocal;
 
     private float trailTimer = 0f;
-    // Tăng nhẹ lên 0.15s để dải ngoài cùng vươn dài và đẹp hơn
-    private float trailDuration = 0.15f;  
+    // Rút ngắn lại để vệt chém gọn gàng hơn, không bị kéo thành một vòng cung quá dài
+    private float trailDuration = 0.10f;  
 
     struct TrailPoint
     {
@@ -127,7 +127,7 @@ public class SusanooSwordTrail : MonoBehaviour
             return;
         }
 
-        int widthSegments = 10; 
+        int widthSegments = 60; // Lưới độ phân giải cực cao để vẽ nhiễu (Noise) mượt mà
         int numVerticesPerSlice = widthSegments + 1;
         
         // Tái sử dụng bộ nhớ thay vì tạo mảng mới (Zero Allocation)
@@ -136,76 +136,71 @@ public class SusanooSwordTrail : MonoBehaviour
         colorsList.Clear();
         trianglesList.Clear();
 
-        // TUYỆT KỸ NINJA STORM 4 - PHIÊN BẢN HOÀN MỸ: Sợi Năng Lượng Độc Lập (Fibrous Strands)
-        // Nâng lên 16 dải để thu hẹp khoảng cách giữa chúng, tạo ra các sợi dày đặc hơn.
-        int numRibbons = 16; 
+        // TUYỆT KỸ UNREAL ENGINE: Nhiễu ngẫu nhiên (Perlin Noise Erosion)
+        // Thay vì sóng răng cưa đều đặn, ta dùng nhiễu để tạo ra các vệt xói mòn hữu cơ (Organic).
+        // Vệt chém là 1 lưới ĐẶC NGUYÊN KHỐI (Không có rãnh hở ở thân).
 
-        for (int r = 0; r < numRibbons; r++)
+        for (int i = 0; i < points.Count; i++)
         {
-            float tInner = (float)r / numRibbons;
-            float tOuter = (float)(r + 1) / numRibbons;
-            float tCenter = (tInner + tOuter) / 2f;
+            float age = Time.time - points[i].timeCreated;
+            float relativePos = points.Count > 1 ? (float)i / (points.Count - 1) : 1f;
             
-            // Dải trong cùng bốc hơi cực nhanh (chỉ sống 20% thời gian), dải ngoài cùng sống 100%
-            float ribbonDuration = trailDuration * Mathf.Lerp(0.2f, 1.0f, Mathf.Pow(tOuter, 2f));
+            // Vuốt toàn bộ vệt chém cong nhẹ về phía mũi kiếm (Tạo hình lưỡi liềm tổng thể)
+            float globalWidthMult = Mathf.Pow(relativePos, 0.5f); 
 
-            for (int i = 0; i < points.Count; i++)
+            Vector3 baseHilt = mf.transform.InverseTransformPoint(points[i].hiltPosition);
+            Vector3 baseTip = mf.transform.InverseTransformPoint(points[i].tipPosition);
+            
+            // Đáy của vệt chém bị bóp cong về phía Mũi Kiếm
+            Vector3 dynamicHilt = Vector3.Lerp(baseTip, baseHilt, globalWidthMult);
+
+            for (int w = 0; w <= widthSegments; w++)
             {
-                float age = Time.time - points[i].timeCreated;
-                float timeAlpha = 1f - (age / ribbonDuration);
+                float tWidth = (float)w / widthSegments; // 0 = Inner (Chuôi), 1 = Outer (Mũi)
+                
+                // --- BÍ QUYẾT TẠO SƯƠNG KHÓI NHƯ UNREAL ENGINE ---
+                // Dùng Perlin Noise tạo xói mòn ngẫu nhiên, không đều đặn như Sine wave!
+                // relativePos * 3f tạo ra sự kéo giãn nhẹ dọc theo chiều dài, giống như khói bị gió cuốn
+                float noise = Mathf.PerlinNoise(tWidth * 15f, relativePos * 3f); 
+                float wave = Mathf.Pow(noise, 2f); // Tương phản hóa nhiễu
+                
+                // Tuổi thọ cơ bản: Ngoài sống 0.10s, Trong bốc hơi ở 0.02s
+                float baseDuration = Mathf.Lerp(0.02f, trailDuration, tWidth);
+                
+                // Áp dụng nhiễu: Đáy nhiễu chết cực nhanh (0.1x), Đỉnh sống thọ (1.0x)
+                float waveInfluence = Mathf.Pow(1f - tWidth, 0.5f); 
+                float durationMultiplier = Mathf.Lerp(1f, Mathf.Lerp(0.1f, 1.0f, wave), waveInfluence);
+                
+                float finalDuration = baseDuration * durationMultiplier;
+
+                // Tính toán Alpha dựa trên tuổi thọ CỦA RIÊNG ĐIỂM ẢNH NÀY!
+                float timeAlpha = 1f - (age / finalDuration);
                 if (timeAlpha < 0) timeAlpha = 0;
-
-                float relativePos = points.Count > 1 ? (float)i / (points.Count - 1) : 1f;
-                // Giảm lũy thừa xuống 0.35 để các dải GIỮ ĐỘ DÀY lâu hơn, khe hở sẽ vô cùng nhỏ 
-                // và chỉ thực sự vuốt nhọn sắc lẹm ở khúc đuôi cùng.
-                float widthMult = Mathf.Pow(relativePos, 0.35f); 
-
-                Vector3 baseHilt = mf.transform.InverseTransformPoint(points[i].hiltPosition);
-                Vector3 baseTip = mf.transform.InverseTransformPoint(points[i].tipPosition);
-
-                // Tọa độ gốc của sợi năng lượng này
-                Vector3 ribbonInnerBase = Vector3.Lerp(baseHilt, baseTip, tInner);
-                Vector3 ribbonOuterBase = Vector3.Lerp(baseHilt, baseTip, tOuter);
-                Vector3 ribbonCenterBase = Vector3.Lerp(baseHilt, baseTip, tCenter);
-
-                // BÍ QUYẾT TRIỆT TIÊU CHỤM MŨI KIẾM: 
-                // Mỗi sợi tự vuốt nhọn về TÂM CỦA CHÍNH NÓ! 
-                // Ở đầu kiếm, chúng dính chặt vào nhau. Ở đuôi kiếm, chúng tự tách nhau ra thành 10 cái kim nhọn!
-                Vector3 dynamicInner = Vector3.Lerp(ribbonCenterBase, ribbonInnerBase, widthMult);
-                Vector3 dynamicOuter = Vector3.Lerp(ribbonCenterBase, ribbonOuterBase, widthMult);
-
+                
                 float localAlpha = timeAlpha * Mathf.Pow(relativePos, 0.5f);
 
-                // Màu Chakra Tím rực rỡ và Viền Trắng chói lóa (Fake HDR)
-                Color purpleChakra = new Color(2f, 0f, 3f, localAlpha); 
-                Color hotWhite = new Color(3f, 3f, 3f, localAlpha);
+                // HỆ MÀU VOLUMETRIC (Chuẩn AAA): Lõi trắng siêu mảnh, Hào quang tím rực rỡ
+                Color deepPurple = new Color(3.5f, 0f, 6.0f, localAlpha); // Tím neon cực gắt
+                Color hotWhite = new Color(5f, 5f, 5f, localAlpha); // Trắng cháy sáng
                 
-                // Chỉ Sợi ngoài cùng mới có viền trắng sắc lẹm
-                Color colorInner = purpleChakra;
-                Color colorOuter = (r == numRibbons - 1) ? hotWhite : purpleChakra;
+                // Lũy thừa 12 ép màu Trắng CHỈ xuất hiện ở 5% ngoài cùng, 95% còn lại là luồng khí tím
+                float whiteSharpness = 12f;
+                Color vColor = Color.Lerp(deepPurple, hotWhite, Mathf.Pow(tWidth, whiteSharpness)); 
 
-                // Frame mới nhất luôn sáng nhất
-                if (i == points.Count - 1 && trailTimer > 0) 
+                if (i == points.Count - 1 && trailTimer > 0) vColor = Color.white;
+
+                verticesList.Add(Vector3.Lerp(dynamicHilt, baseTip, tWidth));
+                uvsList.Add(new Vector2(relativePos, tWidth));
+                colorsList.Add(vColor);
+            }
+            
+            if (i < points.Count - 1)
+            {
+                for (int w = 0; w < widthSegments; w++)
                 {
-                    colorOuter = Color.white;
-                    if (r == numRibbons - 1) colorInner = Color.white;
-                }
-
-                // Add 2 vertices cho mặt cắt của Sợi này
-                verticesList.Add(dynamicInner);
-                verticesList.Add(dynamicOuter);
-                
-                uvsList.Add(new Vector2(relativePos, tInner));
-                uvsList.Add(new Vector2(relativePos, tOuter));
-                
-                colorsList.Add(colorInner);
-                colorsList.Add(colorOuter);
-
-                if (i < points.Count - 1)
-                {
-                    int v0 = (r * points.Count * 2) + (i * 2);
+                    int v0 = (i * numVerticesPerSlice) + w;
                     int v1 = v0 + 1;
-                    int v2 = v0 + 2;
+                    int v2 = v0 + numVerticesPerSlice;
                     int v3 = v2 + 1;
 
                     trianglesList.Add(v0);
