@@ -85,6 +85,8 @@ public class SusanooSwordTrail : MonoBehaviour
         trailTimer = duration;
     }
 
+    private bool wasEmitting = true; // Kích hoạt chạy hàm lần đầu tiên để reset hạt về dạng tròn!
+
     void LateUpdate()
     {
         bool emitting = false;
@@ -92,6 +94,47 @@ public class SusanooSwordTrail : MonoBehaviour
         {
             trailTimer -= Time.deltaTime;
             emitting = true;
+        }
+
+        // TỰ ĐỘNG CHUYỂN ĐỔI TRẠNG THÁI HẠT: DÃN (KHI CHÉM) VÀ TRÒN (KHI ĐỨNG YÊN)
+        if (emitting != wasEmitting)
+        {
+            wasEmitting = emitting;
+            // Dùng transform.root để quét toàn bộ nhân vật (tìm cả hạt của Lưỡi Kiếm lẫn Chắn Kiếm)
+            ParticleSystem[] pss = transform.root.GetComponentsInChildren<ParticleSystem>();
+            foreach(var ps in pss) 
+            {
+                if (ps.gameObject.name.Contains("SusanooEmbers")) {
+                    var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                    var inheritVel = ps.inheritVelocity;
+                    var vel = ps.velocityOverLifetime;
+
+                    if (emitting) {
+                        // KHI CHÉM: Tắt nhiễu loạn ngẫu nhiên, bật kế thừa gia tốc âm và ép dãn hạt
+                        vel.enabled = false; 
+                        inheritVel.enabled = true;
+                        inheritVel.mode = ParticleSystemInheritVelocityMode.Initial;
+                        inheritVel.curveMultiplier = -0.5f; // Lực đẩy lùi mạnh hơn để tạo tia lửa
+                        
+                        renderer.renderMode = ParticleSystemRenderMode.Stretch;
+                        renderer.velocityScale = 0.15f; 
+                        renderer.lengthScale = 1.0f;
+                    } else {
+                        // KHI ĐỨNG YÊN: Bật lại nhiễu loạn để lửa cuộn xoắn tự nhiên, đưa về dạng tròn
+                        vel.enabled = true;
+                        inheritVel.enabled = false;
+                        renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                    }
+                }
+                else if (ps.gameObject.name == "SusanooSwordLightDots") {
+                    var emission = ps.emission;
+                    if (emitting) {
+                        emission.rateOverTime = 300f; // Hạ mật độ theo yêu cầu để đỡ bị một đống dày đặc
+                    } else {
+                        emission.rateOverTime = 0f;
+                    }
+                }
+            }
         }
 
         if (emitting)

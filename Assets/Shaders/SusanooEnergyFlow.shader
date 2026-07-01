@@ -5,13 +5,13 @@ Shader "Custom/SusanooEnergyFlow"
         _MainTex ("Texture", 2D) = "white" {}
         _HasMap ("Has Texture", Float) = 1.0
         [HDR] _Color1 ("Energy Color", Color) = (0.627, 0.329, 0.992, 1.0) 
-        [HDR] _Color2 ("Energy Highlight", Color) = (0.651, 0.486, 0.796, 1.0)
-        _NoiseScale ("Noise Scale", Float) = 3.0
+        [HDR] _Color2 ("Energy Highlight", Color) = (0.6198, 0.4626, 0.7578, 1.0)
+        _NoiseScale ("Noise Scale", Float) = 10.0
         _NoiseMin ("Noise Min", Float) = 0.2
         _NoiseMax ("Noise Max", Float) = 0.8
-        _FlowSpeed ("Flow Speed", Float) = 15.0
+        _FlowSpeed ("Flow Speed", Float) = 6.0
         _ModelScale ("Model Scale", Float) = 1.0
-        _FresnelIntensity ("Fresnel Intensity", Float) = 0.5
+        _FresnelIntensity ("Fresnel Intensity", Range(0.0, 5.0)) = 0.5
     }
     SubShader
     {
@@ -118,7 +118,6 @@ Shader "Custom/SusanooEnergyFlow"
                 }
 
                 // KHẮC PHỤC LỖI FBX LẬT TRỤC (Biến dạng tại chỗ thay vì chảy lên trên)
-                // Lấy vector UP (hướng lên trên) của Thế giới, chuyển ngược về Local Space để làm hướng chảy
                 float3 localUp = mul(unity_WorldToObject, float4(0.0, 1.0, 0.0, 0.0)).xyz;
                 localUp = normalize(localUp);
                 float3 flowDir = -localUp * _Time.y * _FlowSpeed;
@@ -133,6 +132,7 @@ Shader "Custom/SusanooEnergyFlow"
                 
                 if (_HasMap > 0.5) 
                 {
+                    float4 texColor = tex2D(_MainTex, i.uv);
                     finalColor *= texColor.rgb * 2.5;
                 }
                 
