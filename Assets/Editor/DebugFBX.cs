@@ -1,0 +1,1 @@
+using UnityEngine; using UnityEditor; public class DebugFBX { [MenuItem("Tools/Debug FBX")] public static void Run() { foreach (var obj in AssetDatabase.LoadAllAssetsAtPath("Assets/Models/Dangers/shuriken.fbx")) { Debug.Log("SubAsset: " + obj.name + " (" + obj.GetType() + ")"); } } }

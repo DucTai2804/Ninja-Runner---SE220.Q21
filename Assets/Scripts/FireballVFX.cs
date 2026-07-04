@@ -2,10 +2,11 @@ using UnityEngine;
 
 public class FireballVFX : MonoBehaviour
 {
-    [Header("Gắn file fire.jpg vào đây!")]
-    public Texture2D fireTexture;
+    [Header("Gắn file lavatile.jpg vào đây!")]
+    public Texture2D lavaTexture;
 
     private Transform aura1, aura2, aura3, core;
+    private Material coreMatInstance, auraMatInstance;
 
     void Start()
     {
@@ -15,23 +16,28 @@ public class FireballVFX : MonoBehaviour
         core.localPosition = Vector3.zero;
         core.localScale = new Vector3(1.6f, 1.6f, 1.6f); // đường kính = 2 × 0.8
         Destroy(core.GetComponent<Collider>());
-        Material coreMat = new Material(Shader.Find("Unlit/Texture"));
-        if (fireTexture != null) coreMat.mainTexture = fireTexture;
-        coreMat.color = Color.white; // 0xffffff
-        core.GetComponent<Renderer>().material = coreMat;
+        // LÕI: Tắt lõi theo yêu cầu để chỉ kiểm tra lớp Aura duy nhất.
+        core.gameObject.SetActive(false);
 
-        // ===== 2. AURA =====
-        // BẮT BUỘC dùng Additive để tạo hiệu ứng phát sáng (Glow). 
-        // Lửa là ánh sáng, không thể dùng Alpha Blended (sẽ thành đá đặc).
-        Material auraMat = new Material(Shader.Find("Legacy Shaders/Particles/Additive"));
-        if (fireTexture != null) auraMat.mainTexture = fireTexture;
-        // Tăng mạnh Green để màu chuyển sang Vàng Cam sáng rực (Hot Yellow-Orange)
-        auraMat.SetColor("_TintColor", new Color(1f, 0.8f, 0f, 0.8f));
+        // VỎ AURA: Áp dụng Custom Shader dịch 1:1 từ Three.js
+        Material auraMat = new Material(Shader.Find("Custom/FireballFresnel"));
+        // Dùng lavatile.jpg cho aura — y hệt Three.js demo
+        if (lavaTexture != null) {
+            // Three.js: lavaTexture.wrapS = RepeatWrapping; lavaTexture.wrapT = RepeatWrapping;
+            lavaTexture.wrapMode = TextureWrapMode.Repeat;
+            auraMat.mainTexture = lavaTexture;
+        }
         aura1 = CreateAura(auraMat);
         aura2 = CreateAura(auraMat);
         aura3 = CreateAura(auraMat);
+        auraMatInstance = auraMat;
 
-        // ===== 3. HẠT TÀN — ĐƠN GIẢN NHƯ THREE.JS =====
+        // Chỉ bật duy nhất 1 lớp Aura để quan sát
+        aura1.gameObject.SetActive(true);
+        aura2.gameObject.SetActive(false);
+        aura3.gameObject.SetActive(false);
+
+        // ===== 3. HẠT TÀN =====
         GameObject particleObj = new GameObject("FireParticles");
         particleObj.transform.SetParent(this.transform);
         particleObj.transform.localPosition = Vector3.zero;
@@ -39,20 +45,23 @@ public class FireballVFX : MonoBehaviour
         ParticleSystem ps = particleObj.AddComponent<ParticleSystem>();
         var main = ps.main;
         // Giảm lifetime xuống một nửa (0.15-0.3) để vệt tàn ngắn lại và teo nhanh hơn, khớp với Three.js
+        main.loop = true;
         main.startLifetime = new ParticleSystem.MinMaxCurve(0.15f, 0.3f);
-        main.startSpeed = 0f;
-        main.startSize = 1.0f; // Kích thước chuẩn
+        main.startSpeed = new ParticleSystem.MinMaxCurve(2.0f, 4.0f); 
+        main.startSize = new ParticleSystem.MinMaxCurve(1.8f, 3.0f); // Tăng kích thước gấp đôi để bù lại phần viền mờ của hạt 2D
+        
+        // Trộn lẫn màu sắc: Sinh ra ngẫu nhiên giữa màu Cam Vàng và màu Đỏ Rực
+        Color colorOrange = new Color(1f, 0.5f, 0f, 0.8f);
+        Color colorRed = new Color(1f, 0.15f, 0f, 0.8f);
+        main.startColor = new ParticleSystem.MinMaxGradient(colorOrange, colorRed);
+        
         main.simulationSpace = ParticleSystemSimulationSpace.World;
         // Xoay ban đầu chỉ trục Z (giống Three.js: rotation.z = random * PI * 2)
-        main.startRotation3D = false;
-        main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f);
-
-        // Tăng vọt số lượng hạt tàn: 300 hạt/s (tương đương 5 hạt mỗi frame ở 60fps)
-        // Tạo cảm giác đuôi lửa dày đặc và dữ dội hơn
+        // Khôi phục 300 hạt tàn/s để đuôi lửa dày và đẹp như cũ
         var emission = ps.emission;
         emission.rateOverTime = 300f;
 
-        // Vùng sinh: Mở rộng ra 1.2 (to hơn quả cầu) để lòi ra ngoài
+        // Khôi phục vùng sinh Sphere gốc để đường bay tự nhiên
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Sphere;
         shape.radius = 1.2f;
@@ -73,32 +82,35 @@ public class FireballVFX : MonoBehaviour
 
         // Xoay: rotation += delta * 3.0 rad/s = 172°/s
         var rot = ps.rotationOverLifetime;
-        rot.enabled = true;
-        rot.separateAxes = true;
-        rot.x = 172f;
+        rot.enabled = false; // Tắt tính năng xoay 3D để hạt Billboard không bị lật nghiêng thành tờ giấy phẳng
         rot.y = 172f;
         rot.z = 172f;
 
-        // Render mesh thập nhị diện
+        // HẠT TÀN: Sử dụng dạng 2D Billboard mờ ảo (Soft Particle) mặc định của Unity
+        // Việc không gán Mesh hay Material tùy chỉnh sẽ ép Particle System tự động dùng chất liệu Default-ParticleSystem
+        // Đây chính là chất liệu có viền mờ (gradient) lan tỏa rất mềm mại mà bạn thấy ở thanh kiếm Susanoo!
         var rend = ps.GetComponent<ParticleSystemRenderer>();
-        rend.renderMode = ParticleSystemRenderMode.Mesh;
-        rend.mesh = CreateTrueDodecahedron();
+        rend.renderMode = ParticleSystemRenderMode.Billboard; 
 
-        // BẮT BUỘC dùng Additive. Chấp nhận việc nó có thể hơi mờ trên nền quá sáng
-        // vì đó là nguyên lý vật lý của ánh sáng.
+        // Rất tiếc, Unity không cho phép dùng code (Resources.GetBuiltinResource) để lấy ảnh Default-Particle.psd ra.
+        // Đó là lý do tại sao ở lần trước tôi phải dùng đoạn mã "phức tạp" bên dưới để tự vẽ ra một tấm ảnh viền mờ!
+        // Giờ ta đành phải dùng lại nó để không bị lỗi hình vuông hồng.
+        int texSize = 64;
+        Texture2D softTex = new Texture2D(texSize, texSize, TextureFormat.RGBA32, false);
+        for (int y = 0; y < texSize; y++) {
+            for (int x = 0; x < texSize; x++) {
+                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(texSize / 2f, texSize / 2f)) / (texSize / 2f);
+                float alpha = Mathf.Pow(Mathf.Clamp01(1f - dist), 1.5f);
+                softTex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+        softTex.Apply();
+
         Material pMat = new Material(Shader.Find("Legacy Shaders/Particles/Additive"));
-        if (fireTexture != null) pMat.mainTexture = fireTexture;
-        // Bơm Green và Alpha lên cao để hạt tàn rực rỡ và đè bẹp màu xanh của nền
-        pMat.SetColor("_TintColor", new Color(1f, 0.7f, 0f, 0.9f));
-        pMat.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off); // DoubleSide
+        pMat.mainTexture = softTex;
         rend.material = pMat;
 
-        // ===== 4. ÁNH SÁNG — PointLight(0xff4500, 15, 40) =====
-        Light pl = gameObject.AddComponent<Light>();
-        pl.type = LightType.Point;
-        pl.color = new Color(1f, 0.27f, 0f);
-        pl.range = 40f;
-        pl.intensity = 15f;
+        // Bỏ phần tự tạo PointLight bằng code vì người dùng đã có PointLight chuẩn trên Prefab
     }
 
     Transform CreateAura(Material mat)
@@ -114,32 +126,28 @@ public class FireballVFX : MonoBehaviour
 
     void Update()
     {
-        float f = Time.deltaTime * 60f; // Chuyển sang tốc độ per-frame @60fps
+        float f = Time.deltaTime * 60f; 
 
-        // Core: rotation.x -= 0.2
+        // Xoay — giữ nguyên logic cũ cho core và các aura khác
         if (core) core.Rotate(-0.2f * f * Mathf.Rad2Deg, 0, 0, Space.Self);
-
-        // Aura1: x-=0.15, y+=0.2
-        if (aura1) aura1.Rotate(-0.15f * f * Mathf.Rad2Deg, 0.2f * f * Mathf.Rad2Deg, 0, Space.Self);
-        // Aura2: y-=0.15, z+=0.2
+        
+        // aura1: Xoay 90 độ trục X để hướng Cực Nam ra phía trước mặt và Cực Bắc ra phía sau lưng
+        // Do UV.y cuộn âm (-0.4), dòng chảy sẽ đi từ Nam lên Bắc (nghĩa là từ Trước ra Sau)
+        if (aura1) aura1.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        
         if (aura2) aura2.Rotate(0, -0.15f * f * Mathf.Rad2Deg, 0.2f * f * Mathf.Rad2Deg, Space.Self);
-        // Aura3: z-=0.15, x+=0.2
         if (aura3) aura3.Rotate(0.2f * f * Mathf.Rad2Deg, 0, -0.15f * f * Mathf.Rad2Deg, Space.Self);
 
-        // Pulse
-        float s = 2.4f;
-        if (aura1) aura1.localScale = new Vector3(
-            (1f + Random.Range(0f, 0.15f)),
-            (1f + Random.Range(0f, 0.15f)) * 1.1f,
-            (1f + Random.Range(0f, 0.15f)) * 0.9f) * s;
-        if (aura2) aura2.localScale = new Vector3(
-            (1f + Random.Range(0f, 0.15f)) * 0.9f,
-            (1f + Random.Range(0f, 0.15f)),
-            (1f + Random.Range(0f, 0.15f)) * 1.1f) * s;
-        if (aura3) aura3.localScale = new Vector3(
-            (1f + Random.Range(0f, 0.15f)) * 1.1f,
-            (1f + Random.Range(0f, 0.15f)) * 0.9f,
-            (1f + Random.Range(0f, 0.15f))) * s;
+        // Co bóp (Pulsing) mượt mà bằng sóng Sine
+        float time = Time.time * 15f;
+        float baseScale = 2.4f;
+        float pulseAmp = 0.08f;
+        
+        // Tắt biến dạng co bóp cho aura1
+        if (aura1) aura1.localScale = Vector3.one * baseScale;
+        
+        if (aura2) aura2.localScale = Vector3.one * (1f + Mathf.Sin(time + 2f) * pulseAmp) * baseScale;
+        if (aura3) aura3.localScale = Vector3.one * (1f + Mathf.Sin(time + 4f) * pulseAmp) * baseScale;
     }
 
     Mesh CreateTrueDodecahedron()

@@ -128,18 +128,100 @@ public class PlayerController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // Nhận diện va chạm với chướng ngại vật
-        if (other.CompareTag("Obstacle"))
+        if (other.GetComponent<CoinLogic>() != null)
         {
-            if (isInvincible)
+            other.gameObject.SetActive(false);
+            if (UIManager.Instance != null)
             {
-                // Nếu đang bật Susanoo hoặc Chidori, hất văng/xóa chướng ngại vật
-                other.gameObject.SetActive(false);
-                Debug.Log("Obstacle Destroyed by Skill!");
+                UIManager.Instance.coins++;
+                UIManager.Instance.score += 100f; // 1 coin = 100 score
+            }
+            return; // Đã ăn tiền xong thì thoát khỏi hàm, không xét đụng vật cản nữa
+        }
+
+        // --- XỬ LÝ VA CHẠM VỚI BOSSS NARUTO ---
+        NarutoBoss boss = other.GetComponentInParent<NarutoBoss>();
+        if (boss != null || other.name.Contains("Naruto"))
+        {
+            if (boss != null && boss.isUsingRasengan)
+            {
+                if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) // Dùng Chidori
+                {
+                    Debug.Log("⚔️ CLASH KÍCH HOẠT: CHIDORI VS RASENGAN!");
+                    if (ClashManager.Instance != null)
+                    {
+                        ClashManager.Instance.StartClash(boss.gameObject);
+                    }
+                    return;
+                }
+                else
+                {
+                    Debug.Log("Thua cuộc vì hứng trọn Rasengan mà không dùng Chidori!");
+                    if (GameManager.Instance != null) GameManager.Instance.GameOver();
+                    return;
+                }
             }
             else
             {
-                // Bị đụng khi không có kỹ năng bảo vệ
+                // Chạm vào Naruto lúc bình thường (không Rasengan) -> Tương tự bẫy
+                if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
+                {
+                    other.gameObject.SetActive(false); // Chidori xuyên qua phá hủy Naruto
+                    Debug.Log("Chidori tiêu diệt Naruto bản thể (không Rasengan)!");
+                    return;
+                }
+            }
+        }
+        
+        // --- XỬ LÝ PHÂN THÂN NARUTO (Clone) ---
+        if (other.GetComponentInParent<NarutoClone>() != null || other.name.Contains("NarutoClone"))
+        {
+            if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
+            {
+                Destroy(other.transform.root.gameObject); // Chidori tiêu diệt clone
+                Debug.Log("Chidori tiêu diệt Phân thân!");
+                return;
+            }
+            else if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
+            {
+                return; // Susanoo Body/Sword sẽ lo
+            }
+            else
+            {
+                Debug.Log("Đâm trúng phân thân! Game Over.");
+                if (GameManager.Instance != null) GameManager.Instance.GameOver();
+                return;
+            }
+        }
+
+        // --- XỬ LÝ BẪY THƯỜNG ---
+        if (other.CompareTag("Obstacle") || other.name.Contains("GiantRockSlide") || other.name.Contains("GiantRockJump") || other.name.Contains("MountainWall"))
+        {
+            if (isInvincible)
+            {
+                // Nếu đang bật Susanoo, bỏ qua va chạm vì SusanooBodyCollider và SusanooSwordCollider sẽ lo!
+                if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
+                {
+                    return; 
+                }
+                
+                // Nếu đang bật Chidori (isInvincible = true nhưng không phải Susanoo)
+                // Chiêu 2 (Chidori) phá được mọi thứ TRỪ Vách núi
+                if (other.name.Contains("MountainWall"))
+                {
+                    Debug.Log("Sasuke Hit Mountain Wall during Chidori! Game Over.");
+                    if (GameManager.Instance != null)
+                    {
+                        GameManager.Instance.GameOver();
+                    }
+                    return;
+                }
+
+                other.gameObject.SetActive(false);
+                Debug.Log("Obstacle Destroyed by Chidori!");
+            }
+            else
+            {
                 Debug.Log("Sasuke Hit Obstacle! Game Over.");
                 if (GameManager.Instance != null)
                 {
@@ -147,5 +229,50 @@ public class PlayerController : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ForceJump()
+    {
+        // Ép nhân vật nhảy vật lý lên
+        if (!isJumping && !isSliding)
+        {
+            StartCoroutine(JumpRoutine());
+        }
+    }
+
+    public void FallFromHeight(float startHeight)
+    {
+        StartCoroutine(FallRoutine(startHeight));
+    }
+
+    IEnumerator FallRoutine(float startHeight)
+    {
+        isJumping = true; // Khóa phím nhảy của người chơi trong lúc rơi
+        transform.position = new Vector3(transform.position.x, startHeight, transform.position.z);
+        
+        if (anim != null) anim.CrossFadeInFixedTime("Armature|jump", 0.1f); // Dùng tư thế nhảy làm tư thế rơi
+
+        float velocityY = 0f;
+        float gravity = 60f; // Gia tốc rơi cực mạnh
+
+        while (transform.position.y > 0)
+        {
+            velocityY -= gravity * Time.deltaTime;
+            float newY = transform.position.y + velocityY * Time.deltaTime;
+            
+            if (newY <= 0)
+            {
+                newY = 0;
+                transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+                break;
+            }
+            
+            transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+            yield return null;
+        }
+
+        // Chạm đất
+        isJumping = false;
+        if (anim != null) anim.CrossFadeInFixedTime("Armature|run", 0.1f); // Ép về lại dáng chạy ngay lập tức để không bị lặp animation nhảy
     }
 }

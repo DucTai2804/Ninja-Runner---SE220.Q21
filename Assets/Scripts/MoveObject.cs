@@ -3,7 +3,13 @@ using UnityEngine;
 public class MoveObject : MonoBehaviour
 {
     [Tooltip("Vị trí Z phía sau Camera để tự động tắt object")]
-    public float destroyZ = -10f; 
+    public float destroyZ = -200f; 
+
+    void Start()
+    {
+        // Ép cứng -200 để ghi đè mọi giá trị cũ bị lưu đè trong Prefab
+        destroyZ = -200f;
+    }
 
     void Update()
     {

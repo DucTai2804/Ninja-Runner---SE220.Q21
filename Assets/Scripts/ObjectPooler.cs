@@ -21,6 +21,8 @@ public class ObjectPooler : MonoBehaviour
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
+        InjectDynamicPrefabs();
+
         poolDictionary = new Dictionary<string, Queue<GameObject>>();
 
         // Sinh sẵn toàn bộ các GameObject và cho chúng ẩn đi (SetActive = false)
@@ -61,5 +63,54 @@ public class ObjectPooler : MonoBehaviour
         poolDictionary[tag].Enqueue(objectToSpawn);
 
         return objectToSpawn;
+    }
+
+    private void InjectDynamicPrefabs()
+    {
+        bool hasGiantRock = false;
+        bool hasMountainWall = false;
+
+        foreach (PoolItem item in pools)
+        {
+            if (item.tag == "GiantRock") hasGiantRock = true;
+            if (item.tag == "MountainWall") hasMountainWall = true;
+        }
+
+        Material rockMat = null;
+#if UNITY_EDITOR
+        rockMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/RockMat.mat");
+#endif
+
+        if (!hasGiantRock)
+        {
+            GameObject giantRock = new GameObject("GiantRockPrefab");
+            giantRock.SetActive(false);
+            giantRock.AddComponent<MeshFilter>();
+            var mr = giantRock.AddComponent<MeshRenderer>();
+            if (rockMat != null) mr.material = rockMat;
+            giantRock.AddComponent<MeshCollider>();
+            giantRock.AddComponent<GiantRockDeformer>();
+            giantRock.AddComponent<MoveObject>();
+            giantRock.tag = "Obstacle";
+
+            pools.Add(new PoolItem { tag = "GiantRock", prefab = giantRock, size = 15 });
+        }
+
+        if (!hasMountainWall)
+        {
+            GameObject mountainWall = new GameObject("MountainWallPrefab");
+            mountainWall.SetActive(false);
+            mountainWall.AddComponent<MeshFilter>();
+            var mr = mountainWall.AddComponent<MeshRenderer>();
+            if (rockMat != null) mr.material = rockMat;
+            mountainWall.AddComponent<MeshCollider>();
+            mountainWall.AddComponent<MountainWallDeformer>();
+            mountainWall.AddComponent<MoveObject>();
+            mountainWall.tag = "Obstacle";
+            // Kích thước của MountainWall gốc bên Three.js là (100, 40, 100)
+            mountainWall.transform.localScale = new Vector3(100f, 40f, 100f);
+
+            pools.Add(new PoolItem { tag = "MountainWall", prefab = mountainWall, size = 10 });
+        }
     }
 }

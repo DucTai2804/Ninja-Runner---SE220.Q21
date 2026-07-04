@@ -4,55 +4,74 @@ public class FallingObstacle : MonoBehaviour
 {
     [Header("Falling Logic")]
     public bool isFalling = false;
-    public float startY = 100f; // Bắt đầu ở độ cao 100m
-    private float targetY; // Lưu lại tọa độ chuẩn trên mặt đất
-    public float triggerZ = 60f; // Khi vật thể trôi đến mốc Z này thì bắt đầu thả rơi
-    public float fallSpeed = 250f; // Tốc độ rơi sấm sét y hệt Three.js
+    public float startY = 150f; // Bắt đầu ở độ cao 150m (siêu cao)
+    private float targetY; 
+    
+    private float initialZ; // Lưu vị trí Z lúc vừa sinh ra để tính vận tốc rơi
+    private float currentRotSpeedX = 0f;
+    private float currentRotSpeedY = 0f;
 
-    private bool hasTriggered = false;
-
-    // Hàm này được LevelSpawner gọi ngay sau khi vừa sinh đá ra
     public void Setup(bool isFallingVariant)
     {
         isFalling = isFallingVariant;
-        hasTriggered = false;
         
+        // Ép cứng độ cao xuất phát lên cực cao (600m) để ép tốc độ rơi phải thật nhanh 
+        // dù thiên thạch rơi liên tục từ xa thay vì rơi ngắt quãng như Three.js
+        startY = 600f; 
+
         if (isFalling)
         {
-            // LevelSpawner vừa đặt đá chuẩn xác xuống mặt đất, ta lưu tọa độ này lại làm Đích đến
-            targetY = transform.position.y; 
-            
-            // Lập tức đưa tảng đá lên tận chín tầng mây
+            targetY = transform.position.y;
+        
             Vector3 pos = transform.position;
-            pos.y = startY; 
+            pos.y = startY;
             transform.position = pos;
+            
+            initialZ = pos.z; // Ghi nhớ khoảng cách tổng
+            isFalling = true;
         }
     }
 
     void Update()
     {
-        if (!isFalling) return;
+        if (WorldManager.Instance == null) return;
 
-        // Bắt đầu dội bom khi tảng đá bay vào vùng Trigger
-        if (!hasTriggered && transform.position.z <= triggerZ)
+        // Bắt đầu rơi ngay lập tức từ trên cao xuống
+        if (isFalling && transform.position.y > targetY)
         {
-            hasTriggered = true;
-        }
-
-        // Thực hiện hành động rơi
-        if (hasTriggered && transform.position.y > targetY)
-        {
-            Vector3 pos = transform.position;
-            pos.y -= fallSpeed * Time.deltaTime;
+            // Tốc độ rơi = Quãng đường Y / Tổng quãng đường Z ban đầu
+            float dropRate = (startY - targetY) / initialZ; 
+            float actualDrop = dropRate * WorldManager.Instance.currentSpeed * Time.deltaTime;
             
-            if (pos.y < targetY) 
+            Vector3 pos = transform.position;
+            pos.y -= actualDrop;
+            
+            // Xoay đa hướng (giảm tốc độ xoay đi một chút vì giờ thời gian rơi dài hơn Three.js)
+            currentRotSpeedX = -1000f; 
+            currentRotSpeedY = -800f;
+            transform.Rotate(currentRotSpeedX * Time.deltaTime, currentRotSpeedY * Time.deltaTime, 0f, Space.Self);
+
+            if (pos.y <= targetY) 
             {
                 pos.y = targetY;
-                isFalling = false; // Ngừng rơi, vừa vặn khít mặt đất!
-                
-                // (Tương lai có thể thêm hàm rung màn hình Camera tại đây!)
+                isFalling = false; // Ngừng rơi, khít mặt đất!
             }
             transform.position = pos;
+        }
+        else if (!isFalling && (currentRotSpeedX != 0 || currentRotSpeedY != 0))
+        {
+            // Quán tính: Xoay chậm dần khi đã chạm đất
+            // Giảm 7% mỗi khung hình (0.93) đúng chuẩn bản gốc
+            float friction = Mathf.Pow(0.93f, Time.deltaTime * 60f);
+            currentRotSpeedX *= friction; 
+            currentRotSpeedY *= friction; 
+            transform.Rotate(currentRotSpeedX * Time.deltaTime, currentRotSpeedY * Time.deltaTime, 0f, Space.Self);
+            
+            if (Mathf.Abs(currentRotSpeedX) < 10f && Mathf.Abs(currentRotSpeedY) < 10f)
+            {
+                currentRotSpeedX = 0f;
+                currentRotSpeedY = 0f;
+            }
         }
     }
 }

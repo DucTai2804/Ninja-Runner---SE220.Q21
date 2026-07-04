@@ -40,6 +40,13 @@ public class GameManager : MonoBehaviour
     {
         // Khi game mới bật, hiển thị Menu và dừng thời gian
         SetState(GameState.Menu);
+
+        // Khởi tạo UIManager tự động sinh UI nếu chưa có
+        if (UIManager.Instance == null)
+        {
+            GameObject uiManagerObj = new GameObject("UIManager");
+            uiManagerObj.AddComponent<UIManager>();
+        }
     }
 
     void Update()
