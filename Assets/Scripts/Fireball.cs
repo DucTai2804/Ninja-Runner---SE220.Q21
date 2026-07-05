@@ -77,7 +77,8 @@ public class Fireball : MonoBehaviour
                 else
                 {
                     // Hỏa cầu thiêu rụi bản thể Naruto
-                    Debug.Log("🔥 FIREBALL đã thiêu rụi bản thể Naruto!");
+                    Debug.Log("🔥 FIREBALL đã thiêu rụi bản thể Naruto! +500 điểm");
+                    if (UIManager.Instance != null) UIManager.Instance.score += 500f;
                     boss.Die();
                     DestroyFireball();
                     return;
@@ -88,7 +89,8 @@ public class Fireball : MonoBehaviour
         // Nếu đâm trúng bẫy nhỏ (đá con, phi tiêu) hoặc Phân thân của Naruto
         if (other.CompareTag("Obstacle") || other.name.Contains("Rock") || other.name.Contains("Shuriken") || other.name.Contains("NarutoClone") || other.GetComponentInParent<NarutoClone>() != null)
         {
-            Debug.Log("🔥 FIREBALL đã thiêu rụi bẫy: " + other.name);
+            Debug.Log("🔥 FIREBALL đã thiêu rụi bẫy: " + other.name + " +500 điểm");
+            if (UIManager.Instance != null) UIManager.Instance.score += 500f;
             // Tắt chướng ngại vật
             other.gameObject.SetActive(false);
             

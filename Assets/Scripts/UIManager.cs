@@ -57,6 +57,57 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void ShowGameOver()
+    {
+        // 1. Nền đen mờ toàn màn hình
+        GameObject panel = new GameObject("GameOverPanel");
+        panel.transform.SetParent(hudCanvas.transform, false);
+        Image panelImg = panel.AddComponent<Image>();
+        panelImg.color = new Color(0, 0, 0, 0.8f); 
+        RectTransform panelRect = panel.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero; panelRect.anchorMax = Vector2.one;
+        panelRect.sizeDelta = Vector2.zero;
+
+        // 2. Chữ GAME OVER khổng lồ đỏ rực
+        GameObject textObj = new GameObject("GameOverText");
+        textObj.transform.SetParent(panel.transform, false);
+        TextMeshProUGUI goText = textObj.AddComponent<TextMeshProUGUI>();
+        goText.text = "GAME OVER";
+        goText.fontSize = 150;
+        goText.color = Color.red;
+        goText.alignment = TextAlignmentOptions.Center;
+        goText.fontStyle = FontStyles.Bold;
+        RectTransform txtRect = textObj.GetComponent<RectTransform>();
+        txtRect.sizeDelta = new Vector2(800, 200);
+        txtRect.anchoredPosition = new Vector2(0, 100);
+        
+        Outline outline = textObj.AddComponent<Outline>();
+        outline.effectColor = Color.black; outline.effectDistance = new Vector2(4, -4);
+
+        // 3. Nút Retry
+        GameObject btnObj = new GameObject("RetryButton");
+        btnObj.transform.SetParent(panel.transform, false);
+        Image btnImg = btnObj.AddComponent<Image>();
+        btnImg.color = new Color(0.2f, 0.6f, 1f, 1f); // Màu xanh dương nhạt
+        Button btn = btnObj.AddComponent<Button>();
+        btn.onClick.AddListener(() => {
+            Time.timeScale = 1f; // Khôi phục thời gian trước khi tải lại màn
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        });
+        RectTransform btnRect = btnObj.GetComponent<RectTransform>();
+        btnRect.sizeDelta = new Vector2(300, 80);
+        btnRect.anchoredPosition = new Vector2(0, -100);
+
+        GameObject btnTextObj = new GameObject("RetryText");
+        btnTextObj.transform.SetParent(btnObj.transform, false);
+        TextMeshProUGUI btnText = btnTextObj.AddComponent<TextMeshProUGUI>();
+        btnText.text = "RETRY";
+        btnText.fontSize = 40;
+        btnText.color = Color.white;
+        btnText.alignment = TextAlignmentOptions.Center;
+        btnText.fontStyle = FontStyles.Bold;
+    }
+
     public void AnimateSkillButton(int skillIndex)
     {
         RectTransform targetBtn = null;
@@ -81,6 +132,21 @@ public class UIManager : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
+
+        // Bắt buộc phải có GraphicRaycaster để nhận Click chuột!
+        hudCanvas.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
+        // Kiểm tra xem Scene đã có EventSystem chưa, chưa có thì tạo luôn
+        if (UnityEngine.EventSystems.EventSystem.current == null)
+        {
+            GameObject eventSystemObj = new GameObject("EventSystem");
+            eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            
+            // Do dự án dùng Input System mới nên phải dùng InputSystemUIInputModule thay vì StandaloneInputModule
+            var inputModule = eventSystemObj.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            
+            // (Tùy chọn) Gán lại các hành động mặc định nếu cần thiết, nhưng thường InputSystemUIInputModule tự thiết lập mặc định khá tốt.
+        }
 
         Color goldColor = new Color(241f / 255f, 196f / 255f, 15f / 255f); // #f1c40f
         Vector2 shadowDist = new Vector2(2, -2);
@@ -133,6 +199,21 @@ public class UIManager : MonoBehaviour
         RectTransform svRect = scoreTextObj.GetComponent<RectTransform>();
         svRect.anchorMin = new Vector2(0, 0); svRect.anchorMax = new Vector2(1, 0);
         svRect.pivot = new Vector2(0.5f, 0); svRect.sizeDelta = new Vector2(0, 50); svRect.anchoredPosition = Vector2.zero;
+
+        // Distance Text
+        GameObject distObj = new GameObject("DistanceText");
+        distObj.transform.SetParent(scoreSection.transform, false);
+        distanceText = distObj.AddComponent<TextMeshProUGUI>();
+        distanceText.text = "0m";
+        distanceText.fontSize = 24;
+        distanceText.color = new Color(0.8f, 0.8f, 0.8f);
+        distanceText.alignment = TextAlignmentOptions.Top;
+        distanceText.fontStyle = FontStyles.Bold;
+        Outline dOut = distObj.AddComponent<Outline>();
+        dOut.effectColor = Color.black; dOut.effectDistance = new Vector2(2, -2);
+        RectTransform dRect = distObj.GetComponent<RectTransform>();
+        dRect.anchorMin = new Vector2(0, 0); dRect.anchorMax = new Vector2(1, 0);
+        dRect.pivot = new Vector2(0.5f, 1); dRect.sizeDelta = new Vector2(0, 30); dRect.anchoredPosition = new Vector2(0, -10);
 
         // Coin Section
         GameObject coinSection = new GameObject("CoinSection");

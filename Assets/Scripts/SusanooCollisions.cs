@@ -19,7 +19,8 @@ public class SusanooBodyCollider : MonoBehaviour
             }
             else
             {
-                Debug.Log("Susanoo Body crushed an obstacle.");
+                Debug.Log("Susanoo Body crushed an obstacle. +500 điểm");
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
             }
             other.gameObject.SetActive(false);
         }
@@ -35,7 +36,8 @@ public class SusanooSwordCollider : MonoBehaviour
         {
             if (SkillManager.Instance != null && SkillManager.Instance.IsSlashing())
             {
-                Debug.Log("Susanoo Sword perfectly slashed the obstacle!");
+                Debug.Log("Susanoo Sword perfectly slashed the obstacle! +500 điểm");
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
                 other.gameObject.SetActive(false);
             }
         }

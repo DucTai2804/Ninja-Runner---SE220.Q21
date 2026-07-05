@@ -135,6 +135,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 153b79b1be29b8246a1cc33bba31bacd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4185624297174438488}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 153b79b1be29b8246a1cc33bba31bacd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4225019894588138534}
   m_SourcePrefab: {fileID: 100100000, guid: 153b79b1be29b8246a1cc33bba31bacd, type: 3}
 --- !u!4 &8085139349810633909 stripped
 Transform:
@@ -159,3 +162,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NarutoClone
   runSpeed: 10
+  isUsingRasengan: 0
+  rasenganSphere: {fileID: 5956562376405014023, guid: 634ffd2493dba474caba33648e414acb, type: 3}
+--- !u!95 &4225019894588138534
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8899112632868308495}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 530582f778be01f4bb636aae99b091f7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

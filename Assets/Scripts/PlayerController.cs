@@ -157,7 +157,7 @@ public class PlayerController : MonoBehaviour
                 else
                 {
                     Debug.Log("Thua cuộc vì hứng trọn Rasengan mà không dùng Chidori!");
-                    if (GameManager.Instance != null) GameManager.Instance.GameOver();
+                    TriggerGameOver();
                     return;
                 }
             }
@@ -167,7 +167,17 @@ public class PlayerController : MonoBehaviour
                 if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
                 {
                     other.gameObject.SetActive(false); // Chidori xuyên qua phá hủy Naruto
-                    Debug.Log("Chidori tiêu diệt Naruto bản thể (không Rasengan)!");
+                    if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                    Debug.Log("Chidori tiêu diệt Naruto bản thể (không Rasengan)! +500 điểm");
+                    return;
+                }
+                else if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
+                {
+                    return;
+                }
+                else
+                {
+                    TriggerGameOver();
                     return;
                 }
             }
@@ -179,7 +189,8 @@ public class PlayerController : MonoBehaviour
             if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
             {
                 Destroy(other.transform.root.gameObject); // Chidori tiêu diệt clone
-                Debug.Log("Chidori tiêu diệt Phân thân!");
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                Debug.Log("Chidori tiêu diệt Phân thân! +500 điểm");
                 return;
             }
             else if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
@@ -189,7 +200,7 @@ public class PlayerController : MonoBehaviour
             else
             {
                 Debug.Log("Đâm trúng phân thân! Game Over.");
-                if (GameManager.Instance != null) GameManager.Instance.GameOver();
+                TriggerGameOver();
                 return;
             }
         }
@@ -199,35 +210,40 @@ public class PlayerController : MonoBehaviour
         {
             if (isInvincible)
             {
-                // Nếu đang bật Susanoo, bỏ qua va chạm vì SusanooBodyCollider và SusanooSwordCollider sẽ lo!
                 if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
                 {
                     return; 
                 }
                 
-                // Nếu đang bật Chidori (isInvincible = true nhưng không phải Susanoo)
-                // Chiêu 2 (Chidori) phá được mọi thứ TRỪ Vách núi
                 if (other.name.Contains("MountainWall"))
                 {
                     Debug.Log("Sasuke Hit Mountain Wall during Chidori! Game Over.");
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.GameOver();
-                    }
+                    TriggerGameOver();
                     return;
                 }
 
                 other.gameObject.SetActive(false);
-                Debug.Log("Obstacle Destroyed by Chidori!");
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                Debug.Log("Obstacle Destroyed by Chidori! +500 điểm");
             }
             else
             {
                 Debug.Log("Sasuke Hit Obstacle! Game Over.");
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.GameOver();
-                }
+                TriggerGameOver();
             }
+        }
+    }
+
+    void TriggerGameOver()
+    {
+        Time.timeScale = 0f;
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowGameOver();
+        }
+        else if (GameManager.Instance != null)
+        {
+            GameManager.Instance.GameOver();
         }
     }
 

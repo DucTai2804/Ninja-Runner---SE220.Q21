@@ -90,6 +90,7 @@ public class GameManager : MonoBehaviour
             case GameState.GameOver:
                 Time.timeScale = 0f; // Dừng mọi hoạt động
                 if (finalScoreText) finalScoreText.text = "FINAL SCORE\n" + Mathf.FloorToInt(score).ToString();
+                if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(); // Hiện chữ Game Over
                 break;
         }
     }

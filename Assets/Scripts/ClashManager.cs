@@ -8,7 +8,7 @@ public class ClashManager : MonoBehaviour
 
     private GameObject clashCanvas;
     private RectTransform progressBarInner;
-    private Text clashText;
+    private TMPro.TextMeshProUGUI clashText;
 
     private bool isClashing = false;
     private float clashTimer = 0f;
@@ -56,20 +56,21 @@ public class ClashManager : MonoBehaviour
         Image innerImg = inner.AddComponent<Image>();
         innerImg.color = new Color(1f, 0.8f, 0f, 1f); 
         progressBarInner = inner.GetComponent<RectTransform>();
-        progressBarInner.anchorMin = new Vector2(0, 0.5f);
-        progressBarInner.anchorMax = new Vector2(0, 0.5f);
+        progressBarInner.anchorMin = new Vector2(0, 0); // Kéo giãn theo chiều cao
+        progressBarInner.anchorMax = new Vector2(0, 1);
         progressBarInner.pivot = new Vector2(0, 0.5f);
-        progressBarInner.sizeDelta = new Vector2(0, 40); 
+        progressBarInner.sizeDelta = new Vector2(600, 0); // Chiều dài 600, cao bằng parent
         progressBarInner.anchoredPosition = new Vector2(0, 0);
+        progressBarInner.localScale = new Vector3(0, 1, 1); // Scale X từ 0 đến 1
 
         GameObject txtObj = new GameObject("InstructionText");
         txtObj.transform.SetParent(clashCanvas.transform, false);
-        clashText = txtObj.AddComponent<Text>();
+        clashText = txtObj.AddComponent<TMPro.TextMeshProUGUI>();
         clashText.text = "NHẤP PHÍM SPACE LIÊN TỤC!";
-        clashText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         clashText.fontSize = 40;
         clashText.color = Color.red;
-        clashText.alignment = TextAnchor.MiddleCenter;
+        clashText.alignment = TMPro.TextAlignmentOptions.Center;
+        clashText.fontStyle = TMPro.FontStyles.Bold;
         RectTransform txtRect = txtObj.GetComponent<RectTransform>();
         txtRect.sizeDelta = new Vector2(800, 100);
         txtRect.anchoredPosition = new Vector2(0, -130);
@@ -98,7 +99,7 @@ public class ClashManager : MonoBehaviour
     {
         if (!isClashing) return;
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             spacePresses++;
             UpdateProgressBar();
@@ -109,7 +110,10 @@ public class ClashManager : MonoBehaviour
     void UpdateProgressBar()
     {
         float ratio = Mathf.Clamp01((float)spacePresses / pressesRequired);
-        progressBarInner.sizeDelta = new Vector2(ratio * 600f, 40);
+        if (progressBarInner != null)
+        {
+            progressBarInner.localScale = new Vector3(ratio, 1f, 1f);
+        }
     }
 
     IEnumerator ClashRoutine()

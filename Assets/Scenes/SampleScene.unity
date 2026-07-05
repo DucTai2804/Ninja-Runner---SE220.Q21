@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4bfe3983f8c8d244a525d0a62fe0948, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClashManager
-  pressesRequired: 25
+  pressesRequired: 10
   clashDuration: 3
 --- !u!4 &196444481
 Transform:
@@ -305,6 +305,7 @@ MonoBehaviour:
   laneDistance: 3.5
   spawnZ: 80
   distanceBetweenSpawns: 25
+  testNarutoMode: 0
   debugMode: 0
   forcePattern: 7
   giantRockRadius: 25
@@ -313,7 +314,7 @@ MonoBehaviour:
   shurikenExtraSpeed: 24
   shurikenRotationSpeed: 1718
   shurikenSpawnRotation: {x: 90, y: 0, z: 0}
-  narutoPrefab: {fileID: 3852359549200948026, guid: 634ffd2493dba474caba33648e414acb, type: 3}
+  narutoPrefab: {fileID: 6550817193507772328, guid: 634ffd2493dba474caba33648e414acb, type: 3}
 --- !u!114 &321807574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1015,15 +1016,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillManager
   fireballPrefab: {fileID: 1923254137028871713, guid: ada3adfe059b94f43853c05a97651d33, type: 3}
   fireballSpawnPoint: {fileID: 686003005}
-  fireballCooldown: 5
+  fireballCooldown: 15
   fireballSpeed: 25
   chidoriVFX: {fileID: 598424026}
   chidoriDuration: 6
   chidoriSpeedMultiplier: 2.5
-  chidoriCooldown: 0
+  chidoriCooldown: 30
   susanooModel: {fileID: 718615624}
   susanooDuration: 20
-  susanooCooldown: 0
+  susanooCooldown: 50
   susanooPenaltyTime: 2
   dualEyesTexture: {fileID: 2800000, guid: ee73a3a86d2aba44abf923cdd03b23f0, type: 3}
   susanooBodySize: {x: 10, y: 15, z: 10}

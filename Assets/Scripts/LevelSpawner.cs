@@ -11,7 +11,8 @@ public class LevelSpawner : MonoBehaviour
     public float distanceBetweenSpawns = 25f; 
     private float distanceTraveled = 0f;
 
-    [Header("Debug")]
+    [Header("Testing & Debug")]
+    public bool testNarutoMode = false; // Chế độ chỉ sinh Naruto để xem animation
     public bool debugMode = false;
     [Range(1, 9)] public int forcePattern = 7;
     private bool lastDebugMode = false;
@@ -161,13 +162,13 @@ public class LevelSpawner : MonoBehaviour
         if (totalDistance >= nextNarutoDistance)
         {
             SpawnNarutoBoss();
-            nextNarutoDistance += 1500f;
+            nextNarutoDistance += testNarutoMode ? 150f : 1500f; // Nếu test mode thì 150m ra 1 lần
         }
 
         if (distanceTraveled >= distanceBetweenSpawns)
         {
-            // Dọn đường 300m trước khi Boss xuất hiện, không sinh thêm bẫy
-            if (totalDistance < nextNarutoDistance - 300f || totalDistance > nextNarutoDistance + 50f) 
+            // Dọn đường trước khi Boss xuất hiện, không sinh thêm bẫy
+            if (!testNarutoMode && (totalDistance < nextNarutoDistance - 300f || totalDistance > nextNarutoDistance + 50f)) 
             {
                 SpawnObstacles();
             }
