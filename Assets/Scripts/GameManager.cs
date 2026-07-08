@@ -86,11 +86,13 @@ public class GameManager : MonoBehaviour
                 score = 0f;
                 coins = 0;
                 UpdateUI();
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayBGM();
                 break;
             case GameState.GameOver:
                 Time.timeScale = 0f; // Dừng mọi hoạt động
                 if (finalScoreText) finalScoreText.text = "FINAL SCORE\n" + Mathf.FloorToInt(score).ToString();
                 if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(); // Hiện chữ Game Over
+                if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
                 break;
         }
     }

@@ -61,38 +61,52 @@ public class Fireball : MonoBehaviour
             return;
         }
 
-        // Tương tác với Naruto Boss
         NarutoBoss boss = other.GetComponentInParent<NarutoBoss>();
-        if (boss != null || other.name.Contains("Naruto"))
+        if (boss != null)
         {
-            if (boss != null)
+            if (boss.isUsingRasengan)
             {
-                if (boss.isUsingRasengan)
+                // Bất kể Bản thể hay Phân thân, nếu có Rasengan thì đều chặn được Hỏa Cầu
+                Debug.Log("🔥 FIREBALL bị Rasengan cản lại!");
+                DestroyFireball();
+                return;
+            }
+            else
+            {
+                // Hỏa cầu thiêu rụi Naruto chạy bộ (Bản thể hoặc Phân thân)
+                Debug.Log("🔥 FIREBALL đã thiêu rụi " + (boss.isClone ? "Phân thân" : "Bản thể") + "! +500 điểm");
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                
+                // Diệt tận gốc Object thay vì chỉ tắt Collider (khắc phục lỗi đi xuyên qua)
+                if (boss.isClone)
                 {
-                    // Rasengan miễn nhiễm với Hỏa cầu -> Hỏa cầu vỡ
-                    Debug.Log("🔥 FIREBALL bị Rasengan bóp nát!");
-                    DestroyFireball();
-                    return;
+                    Destroy(boss.gameObject);
                 }
                 else
                 {
-                    // Hỏa cầu thiêu rụi bản thể Naruto
-                    Debug.Log("🔥 FIREBALL đã thiêu rụi bản thể Naruto! +500 điểm");
-                    if (UIManager.Instance != null) UIManager.Instance.score += 500f;
-                    boss.Die();
-                    DestroyFireball();
-                    return;
+                    boss.gameObject.SetActive(false);
                 }
+                
+                DestroyFireball();
+                return;
             }
         }
 
-        // Nếu đâm trúng bẫy nhỏ (đá con, phi tiêu) hoặc Phân thân của Naruto
-        if (other.CompareTag("Obstacle") || other.name.Contains("Rock") || other.name.Contains("Shuriken") || other.name.Contains("NarutoClone") || other.GetComponentInParent<NarutoClone>() != null)
+        // Nếu đâm trúng bẫy nhỏ (đá con, phi tiêu)
+        if (other.CompareTag("Obstacle") || other.name.Contains("Rock") || other.name.Contains("Shuriken"))
         {
             Debug.Log("🔥 FIREBALL đã thiêu rụi bẫy: " + other.name + " +500 điểm");
             if (UIManager.Instance != null) UIManager.Instance.score += 500f;
-            // Tắt chướng ngại vật
-            other.gameObject.SetActive(false);
+            
+            // Tắt chướng ngại vật (Tắt object cha nếu có)
+            if (other.transform.parent != null && other.transform.parent.CompareTag("Obstacle"))
+            {
+                other.transform.parent.gameObject.SetActive(false);
+            }
+            else
+            {
+                other.gameObject.SetActive(false);
+            }
             
             destroyedCount++;
             
@@ -101,6 +115,7 @@ public class Fireball : MonoBehaviour
             {
                 DestroyFireball();
             }
+            return;
         }
     }
 
@@ -108,6 +123,12 @@ public class Fireball : MonoBehaviour
     {
         // Tránh gọi 2 lần (nếu vừa hết giờ vừa đâm trúng)
         CancelInvoke("DestroyFireball");
+
+        // Gọi âm thanh ngắt lửa từ từ
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopKaton();
+        }
 
         // Tách hệ thống Particle ra khỏi quả cầu để nó không bị biến mất ngay lập tức
         ParticleSystem ps = GetComponentInChildren<ParticleSystem>();

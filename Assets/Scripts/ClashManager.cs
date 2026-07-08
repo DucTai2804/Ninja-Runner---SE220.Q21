@@ -136,11 +136,26 @@ public class ClashManager : MonoBehaviour
         {
             Debug.Log("CHIDORI THẮNG RASENGAN!");
             
-            // Xóa Naruto
             if (narutoRef != null) 
             {
-                // Thêm tí hạt bụi (nếu rảnh)
-                narutoRef.SetActive(false);
+                NarutoBoss script = narutoRef.GetComponent<NarutoBoss>();
+                if (script != null && script.isClone)
+                {
+                    Debug.Log("Thắng Phân Thân +500!");
+                    if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                    
+                    // Chỉ tiêu diệt phân thân đó
+                    // Transform.root để xóa toàn bộ Object (nếu narutoRef là con)
+                    Destroy(narutoRef.transform.root.gameObject);
+                }
+                else
+                {
+                    Debug.Log("Thắng Bản Thể +1000!");
+                    if (UIManager.Instance != null) UIManager.Instance.score += 1000f;
+                    
+                    // Tắt bản thể -> Hàm OnDisable của bản thể sẽ tự bốc hơi toàn bộ phân thân còn lại
+                    narutoRef.SetActive(false);
+                }
             }
             
             WorldManager.Instance.currentSpeed = WorldManager.Instance.baseSpeed + (WorldManager.Instance.acceleration * Time.timeSinceLevelLoad); 

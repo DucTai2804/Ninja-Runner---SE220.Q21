@@ -305,9 +305,10 @@ MonoBehaviour:
   laneDistance: 3.5
   spawnZ: 80
   distanceBetweenSpawns: 25
-  testNarutoMode: 0
   debugMode: 0
   forcePattern: 7
+  testNarutoMode: 0
+  testNarutoType: 0
   giantRockRadius: 25
   giantRockThickness: 3
   shurikenHeight: 2.5
@@ -555,6 +556,7 @@ GameObject:
   - component: {fileID: 410087041}
   - component: {fileID: 410087040}
   - component: {fileID: 410087042}
+  - component: {fileID: 410087043}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -671,6 +673,33 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &410087043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410087039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 971a6e3c598fa204db6dd15d1c24b4ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DayNightCycle
+  dayBackground: {r: 1, g: 1, b: 1, a: 1}
+  dayAmbient: {r: 1, g: 1, b: 1, a: 1}
+  daySun: {r: 1, g: 1, b: 1, a: 1}
+  dayAmbientIntensity: 0.4
+  daySunIntensity: 1.5
+  nightBackground: {r: 0, g: 0, b: 0, a: 1}
+  nightAmbient: {r: 1, g: 1, b: 1, a: 1}
+  nightMoon: {r: 1, g: 1, b: 1, a: 1}
+  nightAmbientIntensity: 0.4
+  nightMoonIntensity: 0.7
+  dayDuration: 10000
+  nightDuration: 3000
+  directionalLight: {fileID: 410087040}
+  mainCamera: {fileID: 330585545}
+  originalAmbientIntensity: 1
 --- !u!1 &598424026
 GameObject:
   m_ObjectHideFlags: 0
@@ -879,6 +908,65 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1829737284
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1829737286}
+  - component: {fileID: 1829737285}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1829737285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1829737284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 171e59f144282574ea99a7a18c71759c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  bgmClip: {fileID: 8300000, guid: 7d9010fe583cddf46bf7ab7207b1fc6e, type: 3}
+  bgmVolume: 0.15
+  katonClip: {fileID: 8300000, guid: 16c9eedc3f2fc6344bf530cfc2816b15, type: 3}
+  chidoriClip: {fileID: 8300000, guid: 56b7c9f0e249e40469e45f09aa08ec08, type: 3}
+  susanooActClip: {fileID: 8300000, guid: 3da6540e7f2570f46a3dda7e54e0f7c7, type: 3}
+  susanooFlyClip: {fileID: 8300000, guid: 08b00c0f13e631f43b555fd8bd9ea369, type: 3}
+  susanooSlashClip: {fileID: 8300000, guid: a0e12b5a7ff8afd49b528153344b3e33, type: 3}
+  susanooEndClip: {fileID: 8300000, guid: 7ebc33ad5635c6c419c159cb69512c0f, type: 3}
+  shurikenClip: {fileID: 8300000, guid: e9f805b925ef80944886df4325bde446, type: 3}
+  kagebunshinStartClip: {fileID: 8300000, guid: db437ae2698997948a4bc67c549b53ad, type: 3}
+  kagebunshinAppearClip: {fileID: 8300000, guid: 2d86093624172464296e637482d3caac, type: 3}
+  kagebunshinFadeClip: {fileID: 8300000, guid: 63d9a8e41218a0e4b8a3ed2c3be4fd15, type: 3}
+  susanooSlashVolume: 2
+  susanooFlyMaxVolume: 0.8
+  susanooFlyDuckVolume: 0.1
+--- !u!4 &1829737286
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1829737284}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.47719, y: 0, z: -24.91368}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1903381923 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2412161367050800168, guid: f3a7ba043eba29c418c08decd33dbd87, type: 3}
@@ -1021,7 +1109,7 @@ MonoBehaviour:
   chidoriVFX: {fileID: 598424026}
   chidoriDuration: 6
   chidoriSpeedMultiplier: 2.5
-  chidoriCooldown: 30
+  chidoriCooldown: 20
   susanooModel: {fileID: 718615624}
   susanooDuration: 20
   susanooCooldown: 50
@@ -1115,3 +1203,4 @@ SceneRoots:
   - {fileID: 1731666681}
   - {fileID: 1968851165}
   - {fileID: 196444481}
+  - {fileID: 1829737286}

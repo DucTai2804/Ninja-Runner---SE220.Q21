@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class LevelSpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    public float laneDistance = 5.0f; // Mở rộng để phù hợp với PlayerController (5m)
+    public float laneDistance = 5.0f; // Khoảng cách giữa các làn đường
     public float spawnZ = 400f; // Tọa độ Z cực xa (y hệt Three.js) để sinh bẫy ở chân trời
     
     // Khoảng cách (mét) giữa các mảng chướng ngại vật
@@ -12,9 +12,11 @@ public class LevelSpawner : MonoBehaviour
     private float distanceTraveled = 0f;
 
     [Header("Testing & Debug")]
-    public bool testNarutoMode = false; // Chế độ chỉ sinh Naruto để xem animation
     public bool debugMode = false;
     [Range(1, 9)] public int forcePattern = 7;
+    public bool testNarutoMode = false; // Bật để ưu tiên test Boss
+    public enum TestNarutoType { Normal, Rasengan }
+    public TestNarutoType testNarutoType = TestNarutoType.Normal; // Cho phép chọn kỹ năng khi test
     private bool lastDebugMode = false;
     private int lastForcePattern = -1;
 
@@ -34,11 +36,26 @@ public class LevelSpawner : MonoBehaviour
 
     private float currentRequiredDistance = 55f;
 
+    private int blockedWallSide = -1;
+    private float blockedWallRemainingDistance = 0f;
+
+    private float totalDistance = 0f;
+    private float nextNarutoDistance = 1500f;
+    private bool lastTestNarutoMode = false;
+    private int bossSpawnCount = 0; // Đếm số lần sinh Boss trong LevelSpawner
+    
+    public GameObject narutoPrefab; // Kéo Prefab Naruto vào đây (Inspector)
+
     void Awake()
     {
         spawnZ = 400f; 
         distanceBetweenSpawns = 55f; 
         currentRequiredDistance = distanceBetweenSpawns;
+        
+        if (testNarutoMode) 
+        {
+            nextNarutoDistance = 100f; // Ngay từ đầu chỉ đợi 100m
+        }
     }
 
     void Start()
@@ -49,16 +66,28 @@ public class LevelSpawner : MonoBehaviour
 
     private void PreSpawnInitialTraps()
     {
-        // Sinh trước một loạt bẫy từ khoảng cách 80m đến 350m để người chơi thấy bẫy ngay lập tức
-        float[] initialDistances = { 80f, 150f, 220f, 290f, 360f };
+        // Sinh trước một loạt bẫy từ khoảng cách 80m đến 350m
         float originalZ = spawnZ;
         
-        foreach (float z in initialDistances)
-        {
-            spawnZ = z;
-            SpawnObstacles();
-        }
+        // Bẫy 1 (80m): Khởi động rất dễ (Pattern 1)
+        spawnZ = 80f;
+        SpawnPattern(1);
+
+        // Bẫy 2 (150m): Vẫn dễ nhưng đa dạng hơn một chút (Pattern 3)
+        spawnZ = 150f;
+        SpawnPattern(3);
+
+        // Bẫy 3 (220m): Bắt đầu bắt buộc phải nhảy/trượt với Đá khổng lồ (Pattern 7)
+        spawnZ = 220f;
+        SpawnPattern(7);
+
+        // Bẫy 4 (290m) và Bẫy 5 (360m): Bắt đầu sinh ngẫu nhiên như bình thường
+        spawnZ = 290f;
+        SpawnObstacles();
         
+        spawnZ = 360f;
+        SpawnObstacles();
+
         spawnZ = originalZ; // Trả lại 400f cho vòng lặp game
     }
 
@@ -105,13 +134,6 @@ public class LevelSpawner : MonoBehaviour
         coinPrefab.SetActive(false);
     }
 
-    private int blockedWallSide = -1;
-    private float blockedWallRemainingDistance = 0f;
-
-    private float totalDistance = 0f;
-    private float nextNarutoDistance = 1500f;
-    
-    public GameObject narutoPrefab; // Kéo Prefab Naruto vào đây (Inspector)
 
     void Update()
     {
@@ -158,11 +180,37 @@ public class LevelSpawner : MonoBehaviour
             blockedWallRemainingDistance -= moveDist;
         }
 
+        // --- CẬP NHẬT KHOẢNG CÁCH NẾU BẬT/TẮT TEST MODE TRONG LÚC ĐANG CHƠI ---
+        if (testNarutoMode && !lastTestNarutoMode)
+        {
+            // Vừa mới BẬT test mode
+            if (nextNarutoDistance > totalDistance + 100f)
+            {
+                nextNarutoDistance = totalDistance + 100f;
+            }
+
+            // Quét sạch toàn bộ chướng ngại vật đang có trên đường
+            MoveObject[] oldTraps = FindObjectsOfType<MoveObject>();
+            foreach (var trap in oldTraps)
+            {
+                if (trap.CompareTag("Obstacle")) trap.gameObject.SetActive(false);
+            }
+        }
+        else if (!testNarutoMode && lastTestNarutoMode)
+        {
+            // Vừa mới TẮT test mode -> Trả lại khoảng cách 1500m
+            if (nextNarutoDistance < totalDistance + 150f)
+            {
+                nextNarutoDistance = totalDistance + 1500f;
+            }
+        }
+        lastTestNarutoMode = testNarutoMode;
+
         // --- HỆ THỐNG TRIỆU HỒI BOSS NARUTO ---
         if (totalDistance >= nextNarutoDistance)
         {
             SpawnNarutoBoss();
-            nextNarutoDistance += testNarutoMode ? 150f : 1500f; // Nếu test mode thì 150m ra 1 lần
+            nextNarutoDistance += testNarutoMode ? 100f : 1500f; // Nếu test mode thì 100m ra 1 lần
         }
 
         if (distanceTraveled >= distanceBetweenSpawns)
@@ -181,9 +229,28 @@ public class LevelSpawner : MonoBehaviour
         Debug.Log("⚠️ CẢNH BÁO: BOSS NARUTO XUẤT HIỆN!");
         if (narutoPrefab != null)
         {
-            // Sinh Naruto ở chính giữa làn đường, cách xa 400m
-            Vector3 spawnPos = new Vector3(0, 0, spawnZ + 20f); // Spawn xa hơn một chút
-            Instantiate(narutoPrefab, spawnPos, Quaternion.Euler(0, 180, 0));
+            bossSpawnCount++;
+            
+            // Chọn ngẫu nhiên 1 trong 3 làn: -1 (Trái), 0 (Giữa), 1 (Phải)
+            int[] lanes = { -1, 0, 1 };
+            int randomLane = lanes[Random.Range(0, 3)];
+            
+            // Sinh Naruto ở làn đã chọn, cách xa 400m
+            Vector3 spawnPos = new Vector3(randomLane * laneDistance, 0, spawnZ + 20f);
+            GameObject bossObj = Instantiate(narutoPrefab, spawnPos, Quaternion.Euler(0, 180, 0));
+            
+            NarutoBoss script = bossObj.GetComponent<NarutoBoss>();
+            if (script != null)
+            {
+                script.isFirstSpawn = (bossSpawnCount == 1);
+                
+                if (testNarutoMode)
+                {
+                    script.forceTestMode = true; // Bật cờ này để vô hiệu hóa lệnh Random trong Start()
+                    script.isFirstSpawn = false; // Ép thành false để tắt cơ chế miễn Rasengan lần 1
+                    script.willUseRasengan = (testNarutoType == TestNarutoType.Rasengan);
+                }
+            }
         }
     }
 

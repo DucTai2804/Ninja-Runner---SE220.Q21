@@ -31,7 +31,8 @@ public class GroundScroller : MonoBehaviour
             groundMat.mainTexture = groundTexture;
             groundMat.SetTexture("_BaseMap", groundTexture); 
         }
-        groundMat.color = Color.white; 
+        // Khuếch đại màu trắng lên 1.5 lần để làm tông màu mặt đất/làn đường sáng hơn
+        groundMat.color = new Color(1.5f, 1.5f, 1.5f); 
 
         // TẮT Emission đi vì Simple Lit + Ánh sáng 3.0 đã quá đủ chói lóa.
         // Cố tình nhồi thêm Emission 70% sẽ biến mọi thứ thành màu trắng xóa!

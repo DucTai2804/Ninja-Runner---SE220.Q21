@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("Lane Settings")]
-    public float laneDistance = 5.0f; // Mở rộng làn đường thành 5m để vừa với mô hình Sasuke to và cục đá to
+    public float laneDistance = 5.0f; // Khoảng cách giữa các làn đường
     public float switchSpeed = 15.0f; // Tốc độ lướt qua lại
     public float leanMultiplier = 5.0f; // Hệ số nghiêng khi chuyển làn
     private int currentLane = 1; // 0: Trái, 1: Giữa, 2: Phải
@@ -139,11 +139,20 @@ public class PlayerController : MonoBehaviour
             return; // Đã ăn tiền xong thì thoát khỏi hàm, không xét đụng vật cản nữa
         }
 
-        // --- XỬ LÝ VA CHẠM VỚI BOSSS NARUTO ---
+        // --- XỬ LÝ VA CHẠM VỚI BẢN THỂ NARUTO (BOSSS) ---
         NarutoBoss boss = other.GetComponentInParent<NarutoBoss>();
-        if (boss != null || other.name.Contains("Naruto"))
+        if (boss != null && !boss.isClone)
         {
-            if (boss != null && boss.isUsingRasengan)
+            if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
+            {
+                // Bất tử với Susanoo
+                other.transform.root.gameObject.SetActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                Debug.Log("Susanoo chém bay Bản thể Naruto! +500 điểm");
+                return;
+            }
+
+            if (boss.isUsingRasengan)
             {
                 if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) // Dùng Chidori
                 {
@@ -163,16 +172,12 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                // Chạm vào Naruto lúc bình thường (không Rasengan) -> Tương tự bẫy
+                // Chạm vào Naruto lúc bình thường (không Rasengan)
                 if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
                 {
                     other.gameObject.SetActive(false); // Chidori xuyên qua phá hủy Naruto
                     if (UIManager.Instance != null) UIManager.Instance.score += 500f;
                     Debug.Log("Chidori tiêu diệt Naruto bản thể (không Rasengan)! +500 điểm");
-                    return;
-                }
-                else if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
-                {
                     return;
                 }
                 else
@@ -184,24 +189,51 @@ public class PlayerController : MonoBehaviour
         }
         
         // --- XỬ LÝ PHÂN THÂN NARUTO (Clone) ---
-        if (other.GetComponentInParent<NarutoClone>() != null || other.name.Contains("NarutoClone"))
+        NarutoBoss cloneBoss = other.GetComponentInParent<NarutoBoss>();
+        if (cloneBoss != null && cloneBoss.isClone)
         {
-            if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
+            if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
             {
-                Destroy(other.transform.root.gameObject); // Chidori tiêu diệt clone
+                // Bất tử với Susanoo
+                Destroy(other.transform.root.gameObject);
                 if (UIManager.Instance != null) UIManager.Instance.score += 500f;
-                Debug.Log("Chidori tiêu diệt Phân thân! +500 điểm");
+                Debug.Log("Susanoo nghiền nát Phân thân! +500 điểm");
                 return;
             }
-            else if (SkillManager.Instance != null && SkillManager.Instance.IsSusanooActive())
+
+            if (cloneBoss.isUsingRasengan)
             {
-                return; // Susanoo Body/Sword sẽ lo
+                if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) // Dùng Chidori
+                {
+                    Debug.Log("⚔️ CLASH KÍCH HOẠT: CHIDORI VS RASENGAN PHÂN THÂN!");
+                    if (ClashManager.Instance != null)
+                    {
+                        ClashManager.Instance.StartClash(cloneBoss.gameObject);
+                    }
+                    return;
+                }
+                else
+                {
+                    Debug.Log("Thua cuộc vì hứng trọn Rasengan của Phân thân!");
+                    TriggerGameOver();
+                    return;
+                }
             }
             else
             {
-                Debug.Log("Đâm trúng phân thân! Game Over.");
-                TriggerGameOver();
-                return;
+                if (isInvincible && SkillManager.Instance != null && !SkillManager.Instance.IsSusanooActive()) 
+                {
+                    Destroy(other.transform.root.gameObject); // Chidori tiêu diệt clone
+                    if (UIManager.Instance != null) UIManager.Instance.score += 500f;
+                    Debug.Log("Chidori tiêu diệt Phân thân (chạy bộ)! +500 điểm");
+                    return;
+                }
+                else
+                {
+                    Debug.Log("Đâm trúng phân thân! Game Over.");
+                    TriggerGameOver();
+                    return;
+                }
             }
         }
 

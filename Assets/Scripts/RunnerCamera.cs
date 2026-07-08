@@ -16,7 +16,7 @@ public class RunnerCamera : MonoBehaviour
     public bool enableDynamicFog = true;
     public Color fogColor = new Color(0.53f, 0.67f, 0.8f); // Tương đương mã màu 0x88aacc bên Threejs
     public float normalFogStart = 30f;
-    public float normalFogEnd = 120f;
+    public float normalFogEnd = 200f; // Khoảng cách nhìn tối đa mặc định
 
     [Header("Orbit Controls")]
     public float mouseSensitivity = 3f;
@@ -81,6 +81,10 @@ public class RunnerCamera : MonoBehaviour
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = fogColor;
+            
+            // Ép buộc ghi đè lại phòng trường hợp giá trị cũ 120m bị lưu chết trong Inspector
+            normalFogStart = 30f;
+            normalFogEnd = 200f;
         }
     }
 

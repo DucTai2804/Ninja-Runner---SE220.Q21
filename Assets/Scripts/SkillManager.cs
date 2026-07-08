@@ -172,7 +172,13 @@ public class SkillManager : MonoBehaviour
             else
             {
                 if (susanooAnim != null) susanooAnim.SetTrigger("Attack");
-                lastSusanooAttackTime = Time.time; // Cập nhật thời điểm vung kiếm!
+                lastSusanooAttackTime = Time.time;
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.DuckSusanooFly();
+                    AudioManager.Instance.PlaySusanooSlash();
+                    StartCoroutine(UnduckFlyAfterSlash());
+                }
                 
                 if (susanooModel != null)
                 {
@@ -205,10 +211,20 @@ public class SkillManager : MonoBehaviour
         }
     }
 
+    IEnumerator UnduckFlyAfterSlash()
+    {
+        yield return new WaitForSeconds(0.5f); // Chờ animation chém kiếm xong
+        if (isSusanooActive && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.UnduckSusanooFly();
+        }
+    }
+
     void CastFireball()
     {
         lastFireballTime = Time.time;
         if (sasukeAnim != null) sasukeAnim.CrossFadeInFixedTime("Armature|fireball", 0.1f);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayKaton();
         StartCoroutine(CastFireballRoutine());
     }
 
@@ -237,6 +253,7 @@ public class SkillManager : MonoBehaviour
         lastChidoriTime = Time.time;
         if (sasukeAnim != null) sasukeAnim.CrossFadeInFixedTime("Armature|chidori", 0.1f);
         if (chidoriVFX) chidoriVFX.SetActive(true);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayChidori();
         if (chidoriLight != null) 
         {
             chidoriLight.enabled = true; // Bật ánh sáng
@@ -334,11 +351,17 @@ public class SkillManager : MonoBehaviour
         Time.timeScale = 0.3f;
         Time.fixedDeltaTime = 0.02f * Time.timeScale;
         StartCoroutine(ShowDualEyesCutin());
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySusanooActivation();
+            AudioManager.Instance.SetBGMSlowmo(true);
+        }
 
         yield return new WaitForSecondsRealtime(0.5f);
 
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
+        if (AudioManager.Instance != null) AudioManager.Instance.SetBGMSlowmo(false);
 
         SetSasukeMeshesVisible(false);
         
@@ -352,6 +375,7 @@ public class SkillManager : MonoBehaviour
         if (runnerCam != null) runnerCam.SetSusanooMode(true);
         if (TerrainManager.Instance != null) TerrainManager.Instance.ShowBigMountains(true);
         if (player) player.isInvincible = true;
+        if (AudioManager.Instance != null) AudioManager.Instance.StartSusanooFly();
 
         float originalSpeed = WorldManager.Instance.currentSpeed;
         WorldManager.Instance.currentSpeed = originalSpeed * chidoriSpeedMultiplier;
@@ -394,6 +418,12 @@ public class SkillManager : MonoBehaviour
         if (player)
         {
             player.FallFromHeight(8.0f);
+        }
+        
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySusanooEnd();
+            AudioManager.Instance.StopSusanooFly();
         }
         
         isSusanooActive = false;
